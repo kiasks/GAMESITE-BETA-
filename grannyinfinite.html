@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <title>Granny Original | No-Ads Bypass</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bubbls/granny@212c543a85b243c4a0b92211f557e760d83d2292/TemplateData/style.css">
+    
+    <script type="text/javascript">
+        // --- BYPASS TOTAL DE YANDEX Y ANUNCIOS ---
+        // Esto elimina el error "YaGames is not defined"
+        window.YaGames = {
+            init: function() {
+                return Promise.resolve({
+                    deviceInfo: { type: "desktop" },
+                    getEnvironment: function() { return { i18n: { lang: "en" } }; },
+                    adv: {
+                        showRewardedVideo: function(callbacks) {
+                            console.log("Simulando recompensa...");
+                            if (callbacks && callbacks.onOpen) callbacks.onOpen();
+                            
+                            // Señales críticas para desbloquear el Día 2
+                            if (typeof myGameInstance !== 'undefined') {
+                                myGameInstance.SendMessage('YandexAdManager', 'MY_AdOpenedSuccess');
+                                myGameInstance.SendMessage('YandexAdManager', 'MY_GetAward', 1);
+                            }
+                            
+                            if (callbacks && callbacks.onRewarded) callbacks.onRewarded();
+                            if (callbacks && callbacks.onClose) callbacks.onClose();
+                        }
+                    }
+                });
+            }
+        };
+
+        // Bypass para otros sistemas de anuncios
+        window.sdk = {
+            showBanner: function() {
+                if (typeof myGameInstance !== 'undefined') {
+                    myGameInstance.SendMessage('GameMonetize', 'OnAdResolved');
+                    myGameInstance.SendMessage('AudioManager', 'UnmuteAudio');
+                }
+                return Promise.resolve();
+            }
+        };
+    </script>
+
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
+        
+        /* Pantalla de Inicio Limpia (Sin Video) */
+        #menu-arcade {
+            position: fixed; width: 100%; height: 100%; background: #000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 500;
+        }
+
+        #btn-play { cursor: pointer; border: none; background: none; transition: 0.3s; }
+        #btn-play:hover { transform: scale(1.1); filter: drop-shadow(0 0 15px #0f0); }
+
+        #unity-container { width: 100%; height: 100%; display: none; }
+        #loading-bar { position: absolute; bottom: 10%; width: 200px; height: 5px; background: #222; left: 50%; transform: translateX(-50%); }
+        #progress-fill { width: 0%; height: 100%; background: #f00; }
+    </style>
+</head>
+<body>
+
+    <div id="menu-arcade">
+        <button id="btn-play" onclick="startGameDirectly()">
+            <img src="pagesprites/PLAYNOW.png" width="350">
+        </button>
+    </div>
+
+    <div id="unity-container">
+        <canvas id="unity-canvas" style="width: 100%; height: 100%"></canvas>
+        <div id="loading-bar"><div id="progress-fill"></div></div>
+    </div>
+
+    <script>
+        let myGameInstance;
+        const buildUrl = "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/Build";
+
+        function startGameDirectly() {
+            document.getElementById('menu-arcade').style.display = 'none';
+            document.getElementById('unity-container').style.display = 'block';
+            initGame();
+        }
+
+        async function fetchWithParts(name, parts, ext) {
+            const chunks = [];
+            for (let i = 1; i <= parts; i++) {
+                const r = await fetch(`${buildUrl}/${name}_part${i}.${ext}`);
+                chunks.push(await r.arrayBuffer());
+            }
+            return URL.createObjectURL(new Blob(chunks));
+        }
+
+        async function initGame() {
+            const data = await fetchWithParts("Granny", 2, "data");
+            const wasm = await fetchWithParts("Granny", 2, "wasm");
+
+            const script = document.createElement("script");
+            script.src = buildUrl + "/Granny.loader.js";
+            script.onload = () => {
+                createUnityInstance(document.querySelector("#unity-canvas"), {
+                    dataUrl: data,
+                    frameworkUrl: buildUrl + "/Granny.framework.js",
+                    codeUrl: wasm,
+                    streamingAssetsUrl: "https://cdn.jsdelivr.net/gh/gru6nny/ohd@main/StreamingAssets",
+                    companyName: "Arcade", productName: "Granny", productVersion: "1.0",
+                }, (p) => {
+                    document.getElementById('progress-fill').style.width = (p * 100) + "%";
+                }).then(ui => {
+                    myGameInstance = ui;
+                    document.getElementById('loading-bar').style.display = 'none';
+                    document.querySelector("#unity-canvas").focus();
+                });
+            };
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>

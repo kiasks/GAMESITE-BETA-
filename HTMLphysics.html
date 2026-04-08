@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>HTMLPHYSICS v1.4.0 - Physical Body & Destruction</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; }
+        #menu-overlay { 
+            position: absolute; inset: 0; 
+            background: radial-gradient(circle, #0050E6, #002060); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 1000; color: white; transition: 0.8s;
+        }
+        /* Ajuste para que el logo se vea bien sin deformarse */
+        #logo { 
+            max-width: 500px; 
+            height: auto; 
+            margin-bottom: 30px; 
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.4)); 
+        }
+        .play-btn { 
+            padding: 20px 60px; font-size: 1.6rem; font-weight: bold; 
+            color: #0050E6; background: white; border: none; border-radius: 50px; 
+            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .play-btn:hover { transform: scale(1.1); background: #25D366; color: white; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: white; border: 2px solid black; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; }
+        #ui { position: absolute; bottom: 20px; left: 20px; color: white; text-shadow: 2px 2px black; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; pointer-events: none; display: none; }
+        #hud { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: #25D366; font-size: 1.8rem; font-weight: bold; text-shadow: 2px 2px black; pointer-events: none; display: none; }
+    </style>
+</head>
+<body>
+    <div id="menu-overlay">
+        <img id="logo" src="GAMESSPRITES/LOGOHTMLPHYSICS.png" alt="HTMLPHYSICS Logo">
+        
+        <button class="play-btn" id="startBtn">INICIAR JUEGO</button>
+        <p style="margin-top: 20px; opacity: 0.7;">v1.4.0 - Physics Body & Destructor</p>
+    </div>
+
+    <div id="crosshair"></div>
+    <div id="hud">SELECCIÓN: CAJA</div>
+    <div id="ui">
+        <b>WASD</b>: Mover y Empujar | <b>ESPACIO</b>: Volar<br>
+        <b>E</b>: Lanzar | <b>Q</b>: Soltar | <b>Clic Izq</b>: Disparar<br>
+        <span style="color: #ff4444;">¡Choca fuerte contra objetos para destruirlos!</span>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "cannon": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/+esm"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+        import * as CANNON from 'cannon';
+
+        let gameStarted = false;
+        const clock = new THREE.Clock();
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
+        camera.position.set(0, 5, 0);
+
+        const listener = new THREE.AudioListener();
+        camera.add(listener);
+        const audioLoader = new THREE.AudioLoader();
+        let hitSoundBuffer;
+        audioLoader.load('https://threejs.org/examples/sounds/ping_pong.mp3', (buffer) => { hitSoundBuffer = buffer; });
+
+        function playHitSound(position, volume) {
+            if(!hitSoundBuffer || !gameStarted) return;
+            const sound = new THREE.PositionalAudio(listener);
+            sound.setBuffer(hitSoundBuffer);
+            sound.setRefDistance(10);
+            sound.setVolume(Math.min(volume * 0.4, 0.8));
+            const soundMesh = new THREE.Object3D();
+            soundMesh.position.copy(position);
+            scene.add(soundMesh);
+            soundMesh.add(sound);
+            sound.play();
+            setTimeout(() => scene.remove(soundMesh), 1000);
+        }
+
+        const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -25, 0) });
+        const groundMat = new CANNON.Material();
+        const objMat = new CANNON.Material();
+        world.addContactMaterial(new CANNON.ContactMaterial(groundMat, objMat, { friction: 0.5, restitution: 0.3 }));
+
+        const playerShape = new CANNON.Sphere(1.2);
+        const playerBody = new CANNON.Body({ 
+            mass: 100, 
+            shape: playerShape,
+            fixedRotation: true 
+        });
+        playerBody.position.set(0, 5, 0);
+        world.addBody(playerBody);
+
+        const mapSize = 250;
+        const texLoader = new THREE.TextureLoader();
+        const grass = texLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+        grass.wrapS = grass.wrapT = THREE.RepeatWrapping; grass.repeat.set(25, 25);
+        
+        const floorGeo = new THREE.BoxGeometry(mapSize, 2, mapSize);
+        const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ map: grass }));
+        floor.position.y = -1;
+        floor.receiveShadow = true; 
+        scene.add(floor);
+
+        const floorBody = new CANNON.Body({ 
+            mass: 0, 
+            shape: new CANNON.Box(new CANNON.Vec3(mapSize/2, 1, mapSize/2)), 
+            material: groundMat 
+        });
+        floorBody.position.set(0, -1, 0);
+        world.addBody(floorBody);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.3);
+        sun.position.set(50, 100, 50); sun.castShadow = true; scene.add(sun);
+
+        const controls = new PointerLockControls(camera, renderer.domElement);
+        const menu = document.getElementById('menu-overlay');
+        const startBtn = document.getElementById('startBtn');
+
+        startBtn.addEventListener('click', () => controls.lock());
+
+        controls.addEventListener('lock', () => {
+            gameStarted = true;
+            menu.style.opacity = '0';
+            setTimeout(() => {
+                if(controls.isLocked) {
+                    menu.style.display = 'none';
+                    document.getElementById('hud').style.display = 'block';
+                    document.getElementById('ui').style.display = 'block';
+                    document.getElementById('crosshair').style.display = 'block';
+                }
+            }, 800);
+            if(!clock.running) clock.start();
+        });
+
+        controls.addEventListener('unlock', () => {
+            gameStarted = false;
+            menu.style.display = 'flex';
+            setTimeout(() => menu.style.opacity = '1', 10);
+            startBtn.innerText = "CONTINUAR";
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('ui').style.display = 'none';
+            document.getElementById('crosshair').style.display = 'none';
+        });
+
+        let currentType = 'box';
+        const hud = document.getElementById('hud');
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if(e.key === '1') { currentType = 'box'; hud.innerText = "SELECCIÓN: CAJA"; }
+            if(e.key === '2') { currentType = 'sphere'; hud.innerText = "SELECCIÓN: ESFERA"; }
+            if(e.key === '3') { currentType = 'cone'; hud.innerText = "SELECCIÓN: CONO"; }
+            if(e.key === '4') { currentType = 'torus'; hud.innerText = "SELECCIÓN: TOROIDE"; }
+        });
+        window.addEventListener('keyup', (e) => keys[e.code] = false);
+
+        const meshes = [], bodies = [], deathTimes = [];
+        const LIFE_SPAN = 1020;
+
+        function spawn(type, shoot = false) {
+            if(!gameStarted || !controls.isLocked) return;
+            const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+            const pos = shoot ? camera.position.clone().add(dir.multiplyScalar(2)) : camera.position.clone().add(new THREE.Vector3(0, 10, 0));
+            
+            let geo, shape;
+            if(type === 'box') { geo = new THREE.BoxGeometry(1.2, 1.2, 1.2); shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.6, 0.6)); }
+            else if(type === 'sphere') { geo = new THREE.SphereGeometry(0.7, 16, 16); shape = new CANNON.Sphere(0.7); }
+            else if(type === 'cone') { geo = new THREE.ConeGeometry(0.6, 1.3, 16); shape = new CANNON.Cylinder(0.01, 0.6, 1.3, 16); }
+            else { geo = new THREE.TorusGeometry(0.5, 0.2, 8, 24); shape = new CANNON.Sphere(0.6); }
+
+            const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff, transparent: true }));
+            mesh.castShadow = true; scene.add(mesh);
+            const body = new CANNON.Body({ mass: 10, shape: shape, material: objMat });
+            body.position.copy(pos);
+            if(shoot) body.velocity.set(dir.x*50, dir.y*50, dir.z*50);
+
+            body.addEventListener('collide', (e) => {
+                const impact = e.contact.getImpactVelocityAlongNormal();
+                if(impact > 3) playHitSound(body.position, impact/15);
+                if(e.body === playerBody && impact > 15) {
+                    const idx = bodies.indexOf(body);
+                    if(idx !== -1) deathTimes[idx] = clock.getElapsedTime();
+                }
+            });
+            
+            world.addBody(body); meshes.push(mesh); bodies.push(body);
+            deathTimes.push(clock.getElapsedTime() + LIFE_SPAN);
+        }
+
+        window.addEventListener('mousedown', (e) => {
+            if(!controls.isLocked) return;
+            if(e.button === 0) spawn(currentType, true);
+            if(e.button === 2) spawn('sphere', false);
+        });
+
+        let heldBody = null;
+        window.addEventListener('keydown', (e) => {
+            if(!controls.isLocked) return;
+            if(e.code === 'KeyE') {
+                if(heldBody) {
+                    const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+                    heldBody.velocity.set(dir.x * 40, dir.y * 40, dir.z * 40);
+                    heldBody = null;
+                } else { grabObject(); }
+            }
+            if(e.code === 'KeyQ') {
+                if(heldBody) { heldBody.velocity.set(0, -5, 0); heldBody = null; } 
+                else { grabObject(); }
+            }
+        });
+
+        function grabObject() {
+            const ray = new THREE.Raycaster();
+            ray.setFromCamera({x:0, y:0}, camera);
+            const hits = ray.intersectObjects(meshes);
+            if(hits.length > 0 && hits[0].distance < 12) {
+                heldBody = bodies[meshes.indexOf(hits[0].object)];
+            }
+        }
+
+        const playerRay = new THREE.Raycaster();
+        function checkCollision(directionVector) {
+            playerRay.set(camera.position, directionVector);
+            const hits = playerRay.intersectObjects(meshes);
+            return (hits.length > 0 && hits[0].distance < 1.5);
+        }
+
+        let velY = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            const elapsedTime = clock.getElapsedTime();
+
+            if(gameStarted && controls.isLocked) {
+                const speed = 20 * dt;
+                const forwardVec = new THREE.Vector3(); camera.getWorldDirection(forwardVec);
+                const rightVec = new THREE.Vector3().crossVectors(camera.up, forwardVec).normalize().negate();
+
+                if(keys['KeyW'] && !checkCollision(forwardVec)) controls.moveForward(speed);
+                if(keys['KeyS'] && !checkCollision(forwardVec.clone().negate())) controls.moveForward(-speed);
+                if(keys['KeyA'] && !checkCollision(rightVec.clone().negate())) controls.moveRight(-speed);
+                if(keys['KeyD'] && !checkCollision(rightVec)) controls.moveRight(speed);
+                
+                if(keys['Space']) { velY = 13; } else { velY -= 38 * dt; }
+                
+                playerRay.set(camera.position, new THREE.Vector3(0, -1, 0));
+                const groundHits = playerRay.intersectObjects([...meshes, floor]);
+                let groundDist = groundHits.length > 0 ? groundHits[0].distance : 100;
+
+                camera.position.y += velY * dt;
+
+                if(groundDist < 2.5) {
+                    if(velY < 0) {
+                        camera.position.y += (2.5 - groundDist);
+                        velY = 0;
+                    }
+                }
+
+                playerBody.position.copy(camera.position);
+
+                if(camera.position.y < -60) {
+                    camera.position.set(0, 15, 0);
+                    velY = 0;
+                }
+
+                world.fixedStep();
+
+                for(let i = meshes.length - 1; i >= 0; i--) {
+                    meshes[i].position.copy(bodies[i].position);
+                    meshes[i].quaternion.copy(bodies[i].quaternion);
+                    const timeLeft = deathTimes[i] - elapsedTime;
+                    if(bodies[i].position.y < -60 || timeLeft <= 0) {
+                        scene.remove(meshes[i]);
+                        world.removeBody(bodies[i]);
+                        if(heldBody === bodies[i]) heldBody = null;
+                        meshes.splice(i, 1); bodies.splice(i, 1); deathTimes.splice(i, 1);
+                    } else if(timeLeft < 10) {
+                        meshes[i].material.opacity = Math.max(0, timeLeft / 10);
+                    }
+                }
+
+                if(heldBody) {
+                    const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+                    const targetPos = camera.position.clone().add(dir.multiplyScalar(5));
+                    heldBody.position.set(targetPos.x, targetPos.y, targetPos.z);
+                    heldBody.velocity.set(0,0,0);
+                    heldBody.angularVelocity.set(0,0,0);
+                }
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MY ULTIMATE ARCADE</title>
+    <style>
+        body { 
+            margin: 0; background: #050505; color: #fff; 
+            font-family: 'Courier New', monospace; overflow-x: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;
+        }
+
+        #arcade-title {
+            font-size: 45px; color: #0f0; text-shadow: 0 0 20px #0f0;
+            margin-top: 20px; margin-bottom: 40px; letter-spacing: 5px;
+            text-align: center;
+        }
+
+        /* Contenedor restaurado para alinear las cartas */
+        .menu-container {
+            display: flex; gap: 30px; perspective: 1000px; flex-wrap: wrap; justify-content: center;
+            max-width: 1200px; padding: 20px;
+        }
+
+        .game-card {
+            width: 220px; height: 320px; background: #111;
+            border: 4px solid #333; border-radius: 15px;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            padding: 20px; cursor: pointer; transition: 0.4s;
+            position: relative; overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .game-card:hover {
+            transform: scale(1.05) translateY(-10px);
+            border-color: var(--color);
+            box-shadow: 0 0 30px var(--color);
+        }
+
+        .game-icon { font-size: 50px; margin-top: 30px; }
+        .game-name { font-size: 18px; font-weight: bold; text-align: center; }
+
+        /* Colores restaurados */
+        .snake-card { --color: #0f0; }
+        .fnf-card { --color: #ff00ff; }
+        .granny-card { --color: #f00; }
+        .trabajando-card { --color: #ffcc00; } /* Color amarillo para WIP */
+
+        #game-frame-container {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 100;
+        }
+
+        iframe { width: 100%; height: 100%; border: none; }
+
+        #back-btn {
+            position: absolute; top: 20px; left: 20px; 
+            padding: 10px 20px; background: #222; color: #fff;
+            border: 2px solid #555; cursor: pointer; z-index: 110;
+            font-family: 'Courier New', monospace;
+        }
+        #back-btn:hover { background: #000; border-color: #fff; }
+    </style>
+</head>
+<body>
+
+    <h1 id="arcade-title">ARCADE SELECTION</h1>
+
+    <div class="menu-container">
+        <div class="game-card snake-card" onclick="openGame('snake.html')">
+            <div class="game-icon">🐍</div>
+            <div class="game-name">SNAKE 3D<br>SMOOTH</div>
+        </div>
+
+        <div class="game-card fnf-card" onclick="openGame('FNFORIGINAL.html')">
+            <div class="game-icon">🎤</div>
+            <div class="game-name">FRIDAY NIGHT<br>FUNKIN</div>
+        </div>																					      																					 <div class="game-card wip-card" onclick="openGame('TEMPORIZADOR.html')">
+            <div class="game-icon">?</div>
+            <div class="game-name">GAME.WIP<br></div>
+        </div>
+
+
+        <div class="game-card granny-card" onclick="openGame('grannyinfinite.html')">
+            <div class="game-icon">👵</div>
+            <div class="game-name">GRANNY<br>ORIGINAL</div>
+        </div>
+
+        <div class="game-card htmlphysics-card" onclick="openGame('HTMLphysics.html')">
+            <div class="game-icon">🏀</div>
+            <div class="game-name">HTML<br>physics 3D</div>
+        </div>
+    </div>
+
+    <div id="game-frame-container">
+        <button id="back-btn" onclick="closeGame()">ESC - VOLVER AL MENÚ</button>
+        <iframe id="game-frame" src=""></iframe>
+    </div>
+
+    <script>
+        function openGame(file) {
+            const container = document.getElementById('game-frame-container');
+            const frame = document.getElementById('game-frame');
+            frame.src = file;
+            container.style.display = 'block';
+            frame.focus();
+        }
+
+        function closeGame() {
+            const container = document.getElementById('game-frame-container');
+            const frame = document.getElementById('game-frame');
+            frame.src = "";
+            container.style.display = 'none';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if(e.key === "Escape") closeGame();
+        });
+    </script>
+</body>
+</html>

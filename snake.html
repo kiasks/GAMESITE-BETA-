@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>ARCADE SNAKE 3D - FIXED EDITION</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; background-color: #111; 
+            font-family: 'Courier New', monospace;
+            display: flex; align-items: center; justify-content: center; height: 100vh;
+        }
+
+        #arcade-container {
+            position: relative; width: 600px; height: 800px;
+            background: #222; border: 8px solid #444;
+            border-radius: 20px; box-shadow: 0 0 50px #000;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        #marquee {
+            width: 100%; height: 80px; background: #0f0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; font-weight: bold; color: black;
+            box-shadow: inset 0 0 20px #000, 0 5px 15px #0f0;
+            border-radius: 10px 10px 0 0;
+        }
+
+        #game-screen {
+            width: 550px; height: 500px; background: #000;
+            margin-top: 20px; border: 15px solid #111;
+            border-radius: 10px; position: relative; overflow: hidden;
+        }
+
+        #ui-overlay {
+            position: absolute; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.8); z-index: 50;
+        }
+
+        #pts-display { position: absolute; top: 10px; right: 10px; color: #0f0; font-size: 20px; z-index: 60; }
+
+        button {
+            padding: 15px 30px; font-size: 20px; font-family: inherit;
+            background: #0f0; color: black; border: none; cursor: pointer;
+            box-shadow: 0 5px 0 #080; margin: 10px; font-weight: bold;
+        }
+        
+        #retry-btn { display: none; background: #0cf; box-shadow: 0 5px 0 #08c; }
+    </style>
+</head>
+<body>
+
+    <div id="arcade-container">
+        <div id="marquee">SMOOTH SNAKE 3D</div>
+        
+        <div id="game-screen">
+            <div id="pts-display">PUNTOS: <span id="score">0</span></div>
+            
+            <div id="ui-overlay">
+                <h1 id="msg" style="color: #0f0;">READY?</h1>
+                <button id="start-btn" onclick="startGame()">INSERT COIN</button>
+                <button id="retry-btn" onclick="resetGame()">REINTENTAR</button>
+            </div>
+        </div>
+
+        <div id="control-panel" style="color: white; padding: 20px; text-align: center;">
+            <p>USA <b>WASD</b> PARA CONTROLAR</p>
+            <p style="font-size: 12px; opacity: 0.5;">COLISIONES Y FLUIDEZ OPTIMIZADAS</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, food, snake = [];
+        let score = 0, gameActive = false;
+        let moveDir = new THREE.Vector3(1, 0, 0), nextDir = new THREE.Vector3(1, 0, 0);
+        let speed = 0.12; 
+        const gridSize = 16;
+
+        function init() {
+            const container = document.getElementById('game-screen');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 12, 12);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0x404040));
+            let light = new THREE.DirectionalLight(0xffffff, 0.8);
+            light.position.set(5, 10, 5);
+            scene.add(light);
+
+            let grid = new THREE.GridHelper(gridSize, gridSize, 0x00ff00, 0x222222);
+            scene.add(grid);
+
+            createPart(0, 0.5, 0, true);
+            spawnFood();
+
+            window.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                if(key === 'w' && moveDir.z !== 1)  nextDir.set(0, 0, -1);
+                if(key === 's' && moveDir.z !== -1) nextDir.set(0, 0, 1);
+                if(key === 'a' && moveDir.x !== 1)  nextDir.set(-1, 0, 0);
+                if(key === 'd' && moveDir.x !== -1) nextDir.set(1, 0, 0);
+            });
+        }
+
+        function startGame() {
+            document.getElementById('ui-overlay').style.display = 'none';
+            gameActive = true;
+        }
+
+        function resetGame() {
+            snake.forEach(p => scene.remove(p));
+            snake = [];
+            score = 0;
+            document.getElementById('score').innerText = "0";
+            moveDir.set(1, 0, 0); nextDir.set(1, 0, 0);
+            createPart(0, 0.5, 0, true);
+            spawnFood();
+            gameActive = true;
+            document.getElementById('ui-overlay').style.display = 'none';
+            document.getElementById('retry-btn').style.display = 'none';
+            document.getElementById('msg').innerText = "READY?";
+            document.getElementById('msg').style.color = "#0f0";
+        }
+
+        function createPart(x, y, z, isHead) {
+            const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const mat = new THREE.MeshPhongMaterial({ color: isHead ? 0x00ff00 : 0x00aa00 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            scene.add(mesh);
+            if(isHead) snake.unshift(mesh); else snake.push(mesh);
+        }
+
+        function spawnFood() {
+            if(food) scene.remove(food);
+            food = new THREE.Mesh(new THREE.SphereGeometry(0.4), new THREE.MeshPhongMaterial({color: 0xff0000}));
+            food.position.set(
+                (Math.floor(Math.random() * gridSize) - gridSize / 2) + 0.5, 
+                0.5, 
+                (Math.floor(Math.random() * gridSize) - gridSize / 2) + 0.5
+            );
+            scene.add(food);
+        }
+
+        function gameOver() {
+            gameActive = false;
+            document.getElementById('ui-overlay').style.display = 'flex';
+            document.getElementById('msg').innerText = "GAME OVER";
+            document.getElementById('msg').style.color = "red";
+            document.getElementById('retry-btn').style.display = 'inline-block';
+            document.getElementById('start-btn').style.display = 'none';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(gameActive) {
+                moveDir.copy(nextDir);
+                const head = snake[0];
+                
+                head.position.addScaledVector(moveDir, speed);
+
+                // Colisiones bordes
+                if (Math.abs(head.position.x) > gridSize/2 || Math.abs(head.position.z) > gridSize/2) gameOver();
+
+                // COLISIÓN CUERPO (CORREGIDA)
+                // Checamos desde la parte 3 para dar margen al cuello al girar
+                for(let i = 3; i < snake.length; i++) {
+                    if (head.position.distanceTo(snake[i].position) < 0.6) {
+                        gameOver();
+                    }
+                }
+
+                // Colisión comida
+                if (head.position.distanceTo(food.position) < 0.8) {
+                    score++; 
+                    document.getElementById('score').innerText = score;
+                    const lastPart = snake[snake.length-1];
+                    createPart(lastPart.position.x, 0.5, lastPart.position.z, false);
+                    spawnFood();
+                }
+
+                // El cuerpo sigue a la cabeza con suavizado
+                for(let i = snake.length - 1; i > 0; i--) {
+                    const targetPos = snake[i-1].position.clone();
+                    snake[i].position.lerp(targetPos, 0.15);
+                }
+
+                // Cámara fluida
+                const camTarget = new THREE.Vector3(head.position.x, 12, head.position.z + 12);
+                camera.position.lerp(camTarget, 0.05);
+                camera.lookAt(head.position);
+            }
+            if(food) food.rotation.y += 0.05;
+            renderer.render(scene, camera);
+        }
+
+        init(); animate();
+    </script>
+</body>
+</html>
