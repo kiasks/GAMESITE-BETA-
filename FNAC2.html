@@ -1,45 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta property="og:title" content="Five Nights at Candy's 2">
     <meta property="og:image" content="https://kiasks.github.io/GAMESITE-V1-/pagesprites/fnac2portada.webp">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FNaC 2 | Local Host</title>
-    <link rel="stylesheet" type="text/css" href="pagesprites/style.css"/>
-    <style>
-        body { margin: 0; background: #000; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; font-family: sans-serif; }
-        #game-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
-        canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
-        #progress-container { position: absolute; bottom: 20px; width: 300px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; text-align: center; }
-    </style>
-</head>
-<body>
+    <meta property="og:description" content="Juega FNaC 2 en mi sitio local.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://kiasks.github.io/GAMESITE-V1-/pagesprites/fnac2portada.webp">
 
-    <div id="game-container">
-        <canvas id="MMFCanvas" width="1280" height="720"></canvas>
+    <base href="https://cdn.jsdelivr.net/gh/web-ports/fnac/2/">
+    <link rel="stylesheet" type="text/css" href="style.css"/>
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+    <title>Five Nights at Candy's 2</title>
+</head>
+
+<body style="background-color: #000; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh;">
+    
+    <div style="display: inline-block; -webkit-user-select: none; text-align: left">
+        <canvas id="MMFCanvas" width="1280" height="720"> Your browser does not support Canvas. </canvas>
     </div>
 
     <div id="progress-container">
-        <div id="download-text">Cargando datos... 0%</div>
-        <div style="width: 100%; background: #333; height: 10px; border-radius: 5px; margin-top: 5px;">
-            <div id="download-bar" style="width: 0%; height: 100%; background: #3b82f6; border-radius: 5px;"></div>
+        <div style="margin-bottom: 6px; color: white;">Downloading... <span id="download-text">0%</span></div>
+        <div style="width: 100%; background: #444; border-radius: 6px; overflow: hidden;">
+            <div id="download-bar" style="height: 10px; background: #3b82f6; width: 0%; transition: width 0.2s;"></div>
+        </div>
+        <div style="margin: 12px 0 6px; color: white;">Extracting... <span id="extract-text">0%</span></div>
+        <div style="width: 100%; background: #444; border-radius: 6px; overflow: hidden;">
+            <div id="extract-bar" style="height: 10px; background: #10b981; width: 0%; transition: width 0.2s;"></div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
-    <script>
-        // 🚨 AQUÍ ESTÁ EL TRUCO: Le decimos que use JSDELIVR solo para los datos pesados
-        // Pero el motor corre desde tu GitHub.
-        window.location.origin_fake = "https://cdn.jsdelivr.net/gh/web-ports/fnac/2/";
-
-        // Forzar audio y cámaras al hacer clic
-        window.addEventListener('mousedown', () => {
-            if (typeof crunApp !== 'undefined' && crunApp.resume) crunApp.resume();
-        });
-    </script>
-
-    <script src="pagesprites/main.js"></script>
+    <script src="main.js"></script>
 </body>
+
 </html>
