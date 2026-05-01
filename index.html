@@ -4,135 +4,165 @@
     <meta charset="UTF-8">
     <title>GAME SITE (UPTADE)</title>
     <link rel="icon" type="image/png" href="pagesprites/FAVICON.png">
+    
     <style>
-        :root {
-            --neon-green: #0f0;
-            --fnf-pink: #ff00ff;
-            --sidebar-bg: rgba(10, 10, 10, 0.95);
-        }
-
         body { 
             margin: 0; background: #050505; color: #fff; 
-            font-family: 'Courier New', monospace; display: flex; min-height: 100vh;
+            font-family: 'Courier New', monospace; 
+            overflow-y: scroll; 
+            overflow-x: hidden;
+            display: flex; flex-direction: row; min-height: 100vh;
         }
 
-        /* --- SIDEBAR IZQUIERDA --- */
+        /* 🔳 SIDEBAR IZQUIERDA */
         .sidebar {
-            position: fixed; left: 0; top: 0; width: 60px; height: 100vh;
-            background: var(--sidebar-bg); border-right: 2px solid #222;
+            width: 80px; height: 100vh; background: #111;
+            border-right: 2px solid #0f0; position: fixed;
             display: flex; flex-direction: column; align-items: center;
-            padding-top: 20px; z-index: 200; transition: 0.3s; overflow: hidden;
+            padding-top: 20px; z-index: 50; transition: width 0.3s;
         }
 
-        .sidebar:hover { width: 220px; border-right-color: var(--neon-green); }
+        .sidebar:hover { width: 180px; }
 
-        .side-btn {
-            width: 45px; height: 45px; margin-bottom: 20px;
-            background: #1a1a1a; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; border: 1px solid #333; transition: 0.2s;
+        .sidebar-item {
+            width: 100%; padding: 15px 0; text-align: center;
+            cursor: pointer; transition: 0.3s; color: #0f0;
+            text-decoration: none; font-weight: bold; font-size: 11px;
+            white-space: nowrap; overflow: hidden;
         }
 
-        .side-btn:hover { border-color: var(--neon-green); transform: scale(1.1); }
-        .side-label { display: none; color: #fff; margin-left: 15px; font-size: 14px; white-space: nowrap; }
-        .sidebar:hover .side-label { display: block; }
+        .sidebar-item:hover { background: rgba(0, 255, 0, 0.1); text-shadow: 0 0 10px #0f0; }
 
-        /* --- CONTENEDOR DE JUEGOS --- */
-        .main-container {
-            margin-left: 60px; width: calc(100% - 60px);
-            display: flex; flex-direction: column; align-items: center; padding: 40px;
+        /* CONTENIDO PRINCIPAL */
+        .main-content {
+            margin-left: 80px; flex-grow: 1;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px;
         }
 
-        .menu-logo { max-width: 280px; filter: drop-shadow(0 0 15px var(--neon-green)); }
+        .menu-logo {
+            max-width: 300px; height: auto; margin-top: 10px;
+            filter: drop-shadow(0 0 15px #0f0);
+        }
+
+        #arcade-title {
+            font-size: 40px; color: #0f0; text-shadow: 0 0 20px #0f0;
+            margin-bottom: 40px; letter-spacing: 5px; text-align: center;
+        }
 
         .menu-container {
             display: flex; gap: 25px; flex-wrap: wrap; justify-content: center;
-            max-width: 1300px; margin-top: 30px;
+            max-width: 1200px; padding-bottom: 50px;
         }
 
-        /* --- CARDS (ESTILO ARCADE SELECTION) --- */
         .game-card {
             width: 210px; height: 300px; background: #111;
-            border: 4px solid #333; border-radius: 15px;
+            border: 3px solid #333; border-radius: 12px;
             display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
             cursor: pointer; transition: 0.4s; position: relative; overflow: hidden;
             background-size: cover; background-position: center;
         }
 
-        .game-card:hover { transform: translateY(-10px); border-color: var(--color); box-shadow: 0 0 25px var(--color); }
-
-        .game-name { 
-            font-size: 14px; font-weight: bold; text-align: center; width: 100%;
-            background: rgba(0,0,0,0.8); padding: 8px 0; z-index: 2;
+        .game-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 40%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); z-index: 1;
         }
 
-        /* --- TUS PORTADAS --- */
-        .fnf-card { --color: #ff00ff; background-image: url('pagesprites/fnfportada.jpg'); }
+        .game-card:hover {
+            transform: scale(1.05); border-color: var(--color);
+            box-shadow: 0 0 20px var(--color);
+        }
+
+        .game-name { 
+            font-size: 14px; font-weight: bold; z-index: 2; 
+            margin-bottom: 15px; text-shadow: 2px 2px 4px #000; text-align: center;
+        }
+
+        /* 🖼️ PORTADAS */
         .snake-card { --color: #0f0; background-image: url('pagesprites/snakeportada.png'); }
+        .fnf-card { --color: #ff00ff; background-image: url('pagesprites/fnfportada.jpg'); }
         .fruit-card { --color: #ffcc00; background-image: url('pagesprites/fruitninjaportada.png'); }
         .death-card { --color: #f00; background-image: url('pagesprites/deathcase1.png'); }
         .granny-card { --color: #888; background-image: url('pagesprites/grannyportada.jpg'); }
+        .ragdoll-archers-card { --color: #0088ff; background-image: url('pagesprites/ragdollarchersportada.jpg'); }
+        .baldis-plus-card { --color: #0088ff; background-image: url('pagesprites/baldisplusportada.jpg'); }
+        .sml-jeffy-aethos-card { --color: #0088ff; background-image: url('pagesprites/endlessportada.jpg'); }
         .granny2-card { --color: #0088ff; background-image: url('pagesprites/granny2portada.jpg'); }
         .hollow-card { --color: #fff; background-image: url('pagesprites/hollowknightportada2.jpg'); }
+        .baldis-basics-R-card { --color: #0f0; background-image: url('pagesprites/baldiRportada.jpg'); }
         .fnaf3-card { --color: #55ff55; background-image: url('pagesprites/fnaf3portada.webp'); }
-        .baldi-card { --color: #0f0; background-image: url('pagesprites/baldiRportada.jpg'); }
-        .solar-card { --color: #ff4400; background-image: url('pagesprites/solarsmashportada.jpg'); }
-        .jetpack-card { --color: #ffee00; background-image: url('pagesprites/jetpackjoyrideportada.jpg'); }
-        .physics-card { --color: #0088ff; background-image: url('GAMESSPRITES/LOGOHTMLPHYSICS.png'); }
+        .solar-smash-card { --color: #ff4400; background-image: url('pagesprites/solarsmashportada.jpg'); }
+        .crazy-cattle-card { --color: #a3ff00; background-image: url('pagesprites/CRAZYCATTLE3Dportada.png'); }
+        .jetpack-joyride-card { --color: #ffee00; background-image: url('pagesprites/jetpackjoyrideportada.jpg'); }
+        .cut-the-rope-card { --color: #a3ff00; background-image: url('pagesprites/cuttherope.jpg'); }
+        .druken-boxing-card { --color: #0088ff; background-image: url('pagesprites/drukenportada.jpg'); }
+        .htmlphysics-card { --color: #0088ff; background-image: url('GAMESSPRITES/LOGOHTMLPHYSICS.png'); }
 
-        /* --- FRAME DE JUEGO --- */
+        /* IFRAME SISTEMA */
         #game-frame-container {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 300;
+            background: #000; z-index: 100;
         }
+        iframe { width: 100%; height: 100%; border: none; }
         #back-btn {
-            position: absolute; top: 20px; left: 80px; padding: 10px 20px;
-            background: #222; color: #fff; border: 2px solid var(--neon-green); cursor: pointer;
+            position: absolute; top: 20px; left: 20px; 
+            padding: 10px 20px; background: #222; color: #fff;
+            border: 2px solid #555; cursor: pointer; z-index: 110;
         }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="side-btn" onclick="location.reload()">🏠<span class="side-label">INICIO</span></div>
-        <!-- Este ahora redirigirá a tu nuevo sitio separado -->
-        <div class="side-btn" onclick="location.href='fnfzone.html'" style="border-color: var(--fnf-pink);">🎤<span class="side-label">FNF ZONE</span></div>
+        <div class="sidebar-item" onclick="location.reload()">INICIO</div>
+        <div class="sidebar-item" onclick="openGame('fnfzone.html')">FNF ZONE</div>
+        <div class="sidebar-item" onclick="alert('Próximamente...')">ARCHIVE</div>
     </div>
 
-    <div class="main-container">
-        <img src="pagesprites/newlogo.png" class="menu-logo">
-        <h1 style="color:#0f0; text-shadow: 0 0 10px #0f0;">ARCADE SELECTION</h1>
+    <div class="main-content">
+        <img src="pagesprites/newlogo.png" alt="Logo" class="menu-logo">
+        <h1 id="arcade-title">ARCADE SELECTION</h1>
 
         <div class="menu-container">
-            <div class="game-card fnf-card" onclick="location.href='fnfzone.html'"><div class="game-name">FNF ZONE (ENTRAR)</div></div>
             <div class="game-card snake-card" onclick="openGame('snake.html')"><div class="game-name">SNAKE 3D</div></div>
+            <div class="game-card fnf-card" onclick="openGame('FNFORIGINAL.html')"><div class="game-name">FRIDAY NIGHT FUNKIN</div></div>
             <div class="game-card fruit-card" onclick="openGame('FRUITNINJA!!.html')"><div class="game-name">FRUIT NINJA</div></div>
-            <div class="game-card granny-card" onclick="openGame('grannyinfinite.html')"><div class="game-name">GRANNY ORIGINAL</div></div>
-            <div class="game-card granny2-card" onclick="openGame('GRANNY2.html')"><div class="game-name">GRANNY 2</div></div>
-            <div class="game-card fnaf3-card" onclick="openGame('FNAF3.html')"><div class="game-name">FNAF 3</div></div>
-            <div class="game-card baldi-card" onclick="openGame('BALDIREMASTERED.html')"><div class="game-name">BALDI REMASTERED</div></div>
-            <div class="game-card hollow-card" onclick="openGame('HOLLOWKINIGTH.html')"><div class="game-name">HOLLOW KNIGHT</div></div>
-            <div class="game-card solar-card" onclick="openGame('SOLARSMASH.html')"><div class="game-name">SOLAR SMASH</div></div>
-            <div class="game-card jetpack-card" onclick="openGame('JETPACKJOYRIDE.html')"><div class="game-name">JETPACK JOYRIDE</div></div>
-            <div class="game-card physics-card" onclick="openGame('HTMLphysics.html')"><div class="game-name">HTML PHYSICS 3D</div></div>
             <div class="game-card death-card" onclick="openGame('DEATHCASE1.html')"><div class="game-name">DEATH CASE (DEMO)</div></div>
+            <div class="game-card granny-card" onclick="openGame('grannyinfinite.html')"><div class="game-name">GRANNY ORIGINAL</div></div>
+            <div class="game-card ragdoll-archers-card" onclick="openGame('RAGDOLLARCHERS.html')"><div class="game-name">RAGDOLL ARCHERS</div></div>
+            <div class="game-card baldis-plus-card" onclick="openGame('BALDISPLUS.html')"><div class="game-name">BALDIS BASIC PLUS</div></div>
+            <div class="game-card sml-jeffy-aethos-card" onclick="openGame('FNFAETHOS.html')"><div class="game-name">JEFFY AETHOS</div></div>
+            <div class="game-card granny2-card" onclick="openGame('GRANNY2.html')"><div class="game-name">GRANNY 2</div></div>
+            <div class="game-card hollow-card" onclick="openGame('HOLLOWKINIGTH.html')"><div class="game-name">HOLLOW KNIGHT</div></div>
+            <div class="game-card baldis-basics-R-card" onclick="openGame('BALDIREMASTERED.html')"><div class="game-name">BALDI REMASTERED</div></div>
+            <div class="game-card fnaf3-card" onclick="openGame('FNAF3.html')"><div class="game-name">FNAF 3</div></div>
+            <div class="game-card solar-smash-card" onclick="openGame('SOLARSMASH.html')"><div class="game-name">SOLAR SMASH</div></div>
+            <div class="game-card crazy-cattle-card" onclick="openGame('CRAZYCATTLE3D.html')"><div class="game-name">CRAZY CATTLE 3D</div></div>
+            <div class="game-card jetpack-joyride-card" onclick="openGame('JETPACKJOYRIDE.html')"><div class="game-name">JETPACK JOYRIDE</div></div>
+            <div class="game-card cut-the-rope-card" onclick="openGame('CUTTHEROPEORIGINAL.html')"><div class="game-name">CUT THE ROPE</div></div>
+            <div class="game-card druken-boxing-card" onclick="openGame('drukenboxing.html')"><div class="game-name">DRUKEN BOXING</div></div>
+            <div class="game-card htmlphysics-card" onclick="openGame('HTMLphysics.html')"><div class="game-name">HTML PHYSICS 3D</div></div>
         </div>
     </div>
 
     <div id="game-frame-container">
         <button id="back-btn" onclick="closeGame()">ESC - VOLVER</button>
-        <iframe id="game-frame" src="" style="width:100%; height:100%; border:none;"></iframe>
+        <iframe id="game-frame" src=""></iframe>
     </div>
 
     <script>
         function openGame(file) {
-            document.getElementById('game-frame').src = file;
-            document.getElementById('game-frame-container').style.display = 'block';
+            const container = document.getElementById('game-frame-container');
+            const frame = document.getElementById('game-frame');
+            frame.src = file;
+            container.style.display = 'block';
+            frame.focus();
         }
         function closeGame() {
-            document.getElementById('game-frame').src = "";
             document.getElementById('game-frame-container').style.display = 'none';
+            document.getElementById('game-frame').src = "";
         }
+        document.addEventListener('keydown', (e) => { if(e.key === "Escape") closeGame(); });
     </script>
 </body>
 </html>
