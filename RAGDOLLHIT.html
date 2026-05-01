@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drunken Boxing | Fullscreen</title>
+    <style>
+        /* Eliminamos margenes y scroll del sitio para que solo se vea el juego */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* Evita que aparezcan barras de scroll fuera del juego */
+            background-color: #000;
+        }
+
+        /* El iframe ocupa el 100% de la pantalla real */
+        .fullscreen-game {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <iframe 
+        src="https://kiasks.github.io/ragdoll-hit/" 
+        class="fullscreen-game"
+        allow="autoplay; fullscreen; keyboard-vt"
+        allowfullscreen="true">
+    </iframe>
+
+</body>
+</html>
